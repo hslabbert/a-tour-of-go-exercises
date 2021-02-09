@@ -23,16 +23,17 @@ func run(s string) (string, error) {
 		}
 		return s, e
 	}
-	var e error
-	return s, e
+	return s, nil
 }
 
 func main() {
-	s, err := run("somestring")
-	if err != nil {
-		fmt.Println("We have an error")
-		fmt.Println(s, err)
-		return
+	for _, x := range [2]string{"mystring", "badstring"} {
+		s, err := run(x)
+		if err != nil {
+			fmt.Println("We have an error")
+			fmt.Println(s, err)
+			return
+		}
+		fmt.Printf("Got string %s; this is fine\n", s)
 	}
-	fmt.Printf("Got string %s; this is fine\n", s)
 }
