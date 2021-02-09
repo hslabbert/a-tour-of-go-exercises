@@ -16,18 +16,17 @@ func Sqrt(x float64) (float64, error) {
 		var f float64
 		return f, err
 	}
-	var err error
 	z := float64(1)
 	var zc []float64
 	for i := 0; i < 10; i++ {
 		fmt.Println(z)
 		z -= (z*z - x) / (2 * z)
 		if contains(zc, z) {
-			return z, err
+			return z, nil
 		}
 		zc = append(zc, z)
 	}
-	return z, err
+	return z, nil
 }
 
 func contains(s []float64, f float64) bool {
