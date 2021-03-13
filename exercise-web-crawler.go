@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
 // SafeUrlCache is safe to use concurrently.
 type SafeUrlCache struct {
 	mu sync.Mutex
 	v  map[string]bool
+	wg sync.WaitGroup
 }
 
 type Fetcher interface {
@@ -21,9 +21,7 @@ type Fetcher interface {
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
 func (uc *SafeUrlCache) Crawl(url string, depth int, fetcher Fetcher) {
-	// TODO: Fetch URLs in parallel.
-	// TODO: Don't fetch the same URL twice.
-	// This implementation doesn't do either:
+	defer uc.wg.Done()
 	if depth <= 0 {
 		return
 	}
@@ -38,6 +36,7 @@ func (uc *SafeUrlCache) Crawl(url string, depth int, fetcher Fetcher) {
 	fmt.Printf("found: %s %q\n", url, body)
 	for _, u := range urls {
 		if _, ok := uc.v[u]; !ok {
+			uc.wg.Add(1)
 			go uc.Crawl(u, depth-1, fetcher)
 		}
 	}
@@ -45,10 +44,10 @@ func (uc *SafeUrlCache) Crawl(url string, depth int, fetcher Fetcher) {
 }
 
 func main() {
-
 	uc := SafeUrlCache{v: make(map[string]bool)}
+	uc.wg.Add(1)
 	uc.Crawl("https://golang.org/", 4, fetcher)
-	time.Sleep(time.Second)
+	uc.wg.Wait()
 	fmt.Println("Final url cache:", uc.v)
 }
 
