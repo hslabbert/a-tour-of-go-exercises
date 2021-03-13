@@ -9,7 +9,7 @@ import (
 // SafeUrlCache is safe to use concurrently.
 type SafeUrlCache struct {
 	mu sync.Mutex
-	v  map[string]string
+	v  map[string]bool
 }
 
 type Fetcher interface {
@@ -29,15 +29,13 @@ func (uc *SafeUrlCache) Crawl(url string, depth int, fetcher Fetcher) {
 	}
 	uc.mu.Lock()
 	body, urls, err := fetcher.Fetch(url)
+	uc.v[url] = true
+	uc.mu.Unlock()
 	if err != nil {
-		uc.v[url] = "failed"
-		uc.mu.Unlock()
 		fmt.Println(err)
 		return
 	}
 	fmt.Printf("found: %s %q\n", url, body)
-	uc.v[url] = "ok"
-	uc.mu.Unlock()
 	for _, u := range urls {
 		if _, ok := uc.v[u]; !ok {
 			go uc.Crawl(u, depth-1, fetcher)
@@ -47,7 +45,8 @@ func (uc *SafeUrlCache) Crawl(url string, depth int, fetcher Fetcher) {
 }
 
 func main() {
-	uc := SafeUrlCache{v: make(map[string]string)}
+
+	uc := SafeUrlCache{v: make(map[string]bool)}
 	uc.Crawl("https://golang.org/", 4, fetcher)
 	time.Sleep(time.Second)
 	fmt.Println("Final url cache:", uc.v)
