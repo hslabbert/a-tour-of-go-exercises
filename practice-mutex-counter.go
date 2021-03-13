@@ -28,12 +28,23 @@ func (c *SafeCounter) Value(key string) int {
 	return c.v[key]
 }
 
+// LoopInc increments the value of the counter for the given key
+// in a loop of count cycles.
+func (c *SafeCounter) LoopInc(key string, count int) {
+	for i := 0; i < count; i++ {
+		go c.Inc(key)
+	}
+}
+
 func main() {
 	c := SafeCounter{v: make(map[string]int)}
-	for i := 0; i < 1000; i++ {
-		go c.Inc("somekey")
-	}
+	go c.LoopInc("somekey", 1000)
+	go c.LoopInc("somekey", 143)
+	go c.LoopInc("anotherkey", 100)
+	go c.LoopInc("somekey", 547)
+	go c.LoopInc("anotherkey", 300)
 
 	time.Sleep(time.Second)
 	fmt.Println(c.Value("somekey"))
+	fmt.Println(c.Value("anotherkey"))
 }
